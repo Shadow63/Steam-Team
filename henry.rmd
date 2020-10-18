@@ -16,6 +16,17 @@ brain <- read.csv("Brain_GSE50161.csv")
 ```
 
 ```{r}
-summary(brain)
+pca_brain <- prcomp(brain %>% select(-type, -samples), scale = F)
+brain_scores <- pca_brain$x
+
+plotter <- brain_scores %>%
+  data.frame() %>%
+  mutate(type = brain$type) %>%
+  select(type, everything())
+
+ggplot(plotter) +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept=0) +
+  geom_point(mapping = aes(x=PC1, y=PC2, color = brain$type))
 ```
 
