@@ -1,0 +1,58 @@
+---
+title: "data-clean"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+brain = read.csv("brain.csv")
+```
+
+```{r}
+sum(is.na(brain))
+```
+
+```{r}
+sample=sample.int(n = nrow(brain), size = floor(.50*nrow(brain)), replace = F)
+
+train=brain[sample, ]
+test=brain[-sample, ]
+```
+
+
+```{r}
+library(e1071)
+
+naive_bayes_model = naiveBayes(x = train[,3:54677], y = train[,2])
+svm_model = svm(x = train[,3:54677], y = train[,2])
+```
+
+
+```{r}
+nb_pred = predict(naive_bayes_model, test[,3:54677])
+svm_pred = predict(svm_model, test[,3:54677])
+
+```
+
+
+```{r}
+
+model_predictions = data.frame(
+  actual = test$type,
+  svm_pred = svm_pred,
+  nb_pred = nb_pred
+)
+
+
+```
+
+```{r}
+library(caret)
+
+svm_confusionMatrix = confusionMatrix(model_predictions$actual, model_predictions$svm_pred)
+svm_confusionMatrix
+
+nb_confusionMatrix = confusionMatrix(model_predictions$actual, model_predictions$nb_pred)
+nb_confusionMatrix
+```
+
