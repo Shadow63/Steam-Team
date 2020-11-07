@@ -1,0 +1,85 @@
+```{r}
+library(readr)
+Brain_GSE50161 <- read_csv("~/Documents/GitHub/Brain_GSE50161.csv")
+#View(Brain_GSE50161)
+```
+
+```{r}
+library(MASS)
+library(class)
+library(janitor)
+```
+```{r}
+brain <- Brain_GSE50161
+sample=sample.int(n = nrow(brain), size = floor(.5*nrow(brain)), replace = F)
+train=brain[sample, ]
+test=brain[-sample, ]
+```
+
+```{r}
+# Sidebar: A helper function to give the `confusion matrix', specificity and sensitivity
+# caret package does this but the function can be buggy.
+
+confusion <- function(yhat, y, quietly = FALSE){
+  
+  if(!quietly)
+    message("yhat is the vector of predicted outcomes, possibly a factor.\n
+          Sensitivity = (first level predicted) / (first level actual) \n
+          Specificity = (second level predicted) / (second level actual)")
+  
+  if(!is.factor(y) & is.factor(yhat))
+    y <- as.factor(y)
+  
+  if(!all.equal(levels(yhat), levels(y)))
+    stop("Factor levels of yhat and y do not match.")
+  
+  confusion_mat <- table(yhat, y, deparse.level = 2)
+  stats <- data.frame(sensitivity = confusion_mat[1, 1]/sum(confusion_mat[, 1]),
+                                 specificity = confusion_mat[2, 2]/sum(confusion_mat[, 2]))
+  
+  return(list(confusion_mat = confusion_mat, stats = stats))
+}
+```
+
+
+#using caret package to create knn classification model 
+
+```{r}
+library(caret)
+
+# Create 10-fold CV sets
+
+# Tune K by 10-fold CV
+
+#control the train function using trainControl function - this helps tune K by 10-fold cross-validation
+train_control <- trainControl(method="cv", number=10)
+#train_control <- trainControl(method="repeatedcv", repeats = 3)
+#ctrl <- trainControl(method = "repeatedcv", repeats = 3)
+
+
+# type_pred_caret <- train(class_pred_train, type_outcome_train, method = "knn", preProcess = c("center","scale"))
+#keeps giving an error telling us to make sure that the outcome column is a factor or numeric . The class(es) of the column: 'tbl_df', 'tbl', 'data.frame'
+#i don't know why it's showing those as the classes when it should only be referring to the categorical variable 'type' that we converted to as a factor variable
+
+#train function => train(x, y, method, preprocess)
+#so to fix the error, we're going to make y or the outcome column be just the 'type' variable we converted to as a factor variable
+
+#included trainControl which controls printing and resampling for train
+type_pred_caret <- train(class_pred_train, type_outcome_train$type, method = "knn", preProcess = c("center","scale"), trControl = train_control)
+
+type_pred_caret
+```
+
+```{r}
+plot(type_pred_caret)
+```
+
+```{r}
+knnPredict <- predict(type_pred_caret, newdata = class_pred_test) 
+
+confusionMatrix(knnPredict, type_outcome_test$type)
+```
+
+```{r}
+confusion(knnPredict, type_outcome_test$type)
+```
