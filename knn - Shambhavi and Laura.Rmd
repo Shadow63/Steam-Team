@@ -51,6 +51,39 @@ confusion <- function(yhat, y, quietly = FALSE){
 #using caret package to create knn classification model 
 
 ```{r}
+library(dplyr)
+brain_class <- brain
+
+# put outcome in its own object
+type_outcome <- brain_class %>% select(type)
+class(type_outcome$type)
+#convert the outcome/response variable into a factor variable
+type_outcome$type <- as.factor(type_outcome$type)
+class(type_outcome$type)
+
+# remove original variable (type, the response variable) from the data set, as well as the samples variable (identifier)
+brain_class <- brain_class %>% select(-c(type,samples))
+```
+
+```{r}
+set.seed(1234) # set the seed to make the partition reproducible
+
+# 75% of the sample size
+smp_size <- floor(0.75 * nrow(brain_class))
+
+train_ind <- sample(seq_len(nrow(brain_class)), size = smp_size)
+
+# creating test and training sets that contain all of the predictors
+class_pred_train <- brain_class[train_ind, ]
+class_pred_test <- brain_class[-train_ind, ]
+```
+
+```{r}
+type_outcome_train <- type_outcome[train_ind, ]
+type_outcome_test <- type_outcome[-train_ind, ]
+```
+
+```{r}
 library(caret)
 
 # Create 10-fold CV sets
@@ -59,9 +92,6 @@ library(caret)
 
 #control the train function using trainControl function - this helps tune K by 10-fold cross-validation
 train_control <- trainControl(method="cv", number=10)
-#train_control <- trainControl(method="repeatedcv", repeats = 3)
-#ctrl <- trainControl(method = "repeatedcv", repeats = 3)
-
 
 # type_pred_caret <- train(class_pred_train, type_outcome_train, method = "knn", preProcess = c("center","scale"))
 #keeps giving an error telling us to make sure that the outcome column is a factor or numeric . The class(es) of the column: 'tbl_df', 'tbl', 'data.frame'
