@@ -1,0 +1,80 @@
+---
+title: "peter's trash"
+author: "Peter Lee"
+date: "November 6, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+brain = read.csv("Brain.csv")
+
+
+```
+
+```{r}
+library(leaps)
+x <- brain[,-c(1, 2)]
+
+sub <- regsubsets(x, factor(brain$type), nvmax=10, na.rm=TRUE)
+s <- summary(sub)
+
+```
+
+
+```{r}
+library(tidyr)
+library(ggplot2)
+head(brain)
+newbrain <- brain[, -c(1)]
+temp <- gather(newbrain, metric, value, -type)
+
+ggplot(temp, aes(x = metric, y = value)) + geom_boxplot(fill = "red", colour = "brown", notch = FALSE) + labs(title = "Box plots of the selected features", x = "", y = "") + theme_minimal()
+
+```
+
+
+```{r}
+library(dplyr)
+pca_brain <- prcomp(select(newbrain, -type), scale = TRUE)
+pca_brain$rotation[, c(1, 2, 3, 4)]
+
+pca_scores <- pca_brain$x
+low_dim_rep <- select(mutate(data.frame(pca_scores), type = newbrain$type), type, everything())
+low_dim_rep[, c(1, 2, 3, 4, 5)]
+```
+
+```{r}
+ggplot(low_dim_rep, aes(x = PC1, y = PC2, color=type)) +
+geom_vline(xintercept = 0) +
+geom_hline(yintercept = 0) +
+geom_text(aes(label = type), size = 2) +
+scale_x_continuous(breaks = -10:10) +
+theme_light() + geom_point()
+```
+
+```{r}
+library(e1071)
+library(caret)
+trainIndex <- createDataPartition(newbrain$type)$Resample1
+train <- newbrain[trainIndex, ]
+test <- newbrain[-trainIndex, ]
+
+print(table(newbrain$type))
+print(table(train$type))
+
+nbclass <- naiveBayes(x = newbrain[, colnames(newbrain) != "type"], y = newbrain$type, data=train)
+summary(nbclass)
+
+
+
+```
+
+```{r}
+library(MASS)
+ldabrain <- lda(x = newbrain[, colnames(newbrain) != "type"], grouping = factor(newbrain$type),data=train)
+ldabrain
+```
