@@ -89,3 +89,335 @@ confusionMatrix(knnPredict, type_outcome_test$type)
 ```{r}
 confusion(knnPredict, type_outcome_test$type)
 ```
+
+
+#Shambhavi 
+
+
+```{r}
+#splitting the dataset by type before doing KNN on each brain cancer subtype
+# brain <- Brain_GSE50161
+brain_ependymoma <- brain[1:46,]
+brain_glioblastoma <- brain[47:80,]
+brain_medulloblastoma <- brain[81:102,]
+brain_normal <- brain[103:115,]
+brain_pilocytic <- brain[116:130,]
+```
+
+
+
+```{r}
+#combining each type of cancer with normal and spliting each into test and train 
+brain_ependymoma_normal <- rbind(brain_ependymoma, brain_normal)
+brain_glioblastoma_normal <- rbind(brain_glioblastoma, brain_normal)
+brain_pilocytic_normal <- rbind(brain_pilocytic, brain_normal)
+brain_medulloblastoma_normal <- rbind(brain_medulloblastoma, brain_normal)
+
+```
+
+
+```{r}
+#converting type to binary variable for each type of brain cancer 
+#levels(brain_ependymoma_normal$type) <- c(1,0)
+#head(brain_ependymoma_normal)
+
+#brain_ependymoma_normal$type <- as.factor (brain_ependymoma_normal$type) 
+#head(brain_ependymoma_normal)
+
+#results <- fast_dummies::dummy_cols(brain_ependymoma_normal$type)
+#knitr::kable(results)
+
+library(varhandle)
+binary_ependymoma <- to.dummy(brain_ependymoma_normal$type, "is")
+brain_ependymoma_normal <- cbind(brain_ependymoma_normal, binary_ependymoma)
+brain_ependymoma_normal$is.normal
+
+binary_glioblastoma <- to.dummy(brain_glioblastoma_normal$type, "is")
+brain_glioblastoma_normal <- cbind(brain_glioblastoma_normal, binary_glioblastoma)
+brain_glioblastoma_normal$is.normal
+
+binary_medulloblastoma <- to.dummy(brain_medulloblastoma_normal$type, "is")
+brain_medulloblastoma_normal <- cbind(brain_medulloblastoma_normal, binary_medulloblastoma)
+brain_medulloblastoma_normal$is.normal
+
+binary_pilocytic <- to.dummy(brain_pilocytic_normal$type, "is")
+brain_pilocytic_normal <- cbind(brain_pilocytic_normal, binary_pilocytic)
+brain_pilocytic_normal$is.normal
+
+```
+```{r}
+set.seed(123)   
+smp_siz_1 = floor(0.5*nrow(brain_ependymoma_normal)) 
+train1 = sample(seq_len(nrow(brain_ependymoma_normal)),size = smp_siz_1)  
+train_ependymoma_normal = brain_ependymoma_normal[train1,]
+test_ependymoma_normal = brain_ependymoma_normal[-train1,] 
+
+
+set.seed(123)   
+smp_siz_2 = floor(0.5*nrow(brain_glioblastoma_normal)) 
+train2 = sample(seq_len(nrow(brain_glioblastoma_normal)),size = smp_siz_2)  
+train_glioblastoma_normal = brain_glioblastoma_normal[train2,]
+test_glioblastoma_normal = brain_glioblastoma_normal[-train2,] 
+
+
+set.seed(123)   
+smp_siz_3 = floor(0.5*nrow(brain_medulloblastoma_normal)) 
+train3 = sample(seq_len(nrow(brain_medulloblastoma_normal)),size = smp_siz_3)  
+train_medulloblastoma_normal = brain_medulloblastoma_normal[train3,]
+test_medulloblastoma_normal = brain_medulloblastoma_normal[-train3,] 
+
+set.seed(123)   
+smp_siz_4 = floor(0.5*nrow(brain_pilocytic_normal)) 
+train4 = sample(seq_len(nrow(brain_pilocytic_normal)),size = smp_siz_4)  
+train_pilocytic_normal = brain_pilocytic_normal[train4,]
+test_pilocytic_normal = brain_pilocytic_normal[-train4,] 
+
+```
+
+```{r}
+#doing KNN on individual chunks 
+label_train1 <- train_ependymoma_normal$is.ependymoma
+label_test1 <- test_ependymoma_normal$is.ependymoma
+
+label_train2 <- train_glioblastoma_normal$is.glioblastoma
+label_test2 <- test_glioblastoma_normal$is.glioblastoma
+
+label_train3 <- train_medulloblastoma_normal$is.medulloblastoma
+label_test3 <- test_medulloblastoma_normal$is.medulloblastoma
+
+label_train4 <- train_pilocytic_normal$is.pilocytic_astrocytoma
+label_test4 <- test_pilocytic_normal$is.pilocytic_astrocytoma
+```
+
+
+
+
+```{r}
+#removed samples (identifier) and type (response variable)
+#train_final = train[, -c(1,2)]
+#test_final = test[, -c(1,2)]
+pca_train1 <- prcomp(train_ependymoma_normal[, -c(1,2,54678,54679)], center = TRUE, scale. = TRUE)
+pr.var1 <- pca_train1$sdev^2
+pve1 = pr.var1 / sum(pr.var1)
+which(cumsum(pve1) >= 0.85)[1] #determine how many PCs to be included
+
+pca_train2 <- prcomp(train_glioblastoma_normal[, -c(1,2,54678,54679)], center = TRUE, scale. = TRUE)
+pr.var2 <- pca_train2$sdev^2
+pve2 = pr.var2 / sum(pr.var2)
+which(cumsum(pve2) >= 0.85)[1] #determine how many PCs to be included
+
+pca_train3 <- prcomp(train_medulloblastoma_normal[, -c(1,2,54678,54679)], center = TRUE, scale. = TRUE)
+pr.var3 <- pca_train3$sdev^2
+pve3 = pr.var3 / sum(pr.var3)
+which(cumsum(pve3) >= 0.85)[1] #determine how many PCs to be included
+
+pca_train4 <- prcomp(train_pilocytic_normal[, -c(1,2,54678,54679)], center = TRUE, scale. = TRUE)
+pr.var4 <- pca_train4$sdev^2
+pve4 = pr.var4 / sum(pr.var4)
+which(cumsum(pve4) >= 0.85)[1] #determine how many PCs to be included
+
+
+```
+
+```{r}
+# pca_matrix_train <- pca_train$x[, 1:9] 
+#1:9 is how many PCS are to be included => so the new matrix contains 9 PC loadings (centered and scaled) from above 
+# pca_matrix_test <- predict(pca_train, newdata = test)[, 1:9]
+
+pca_matrix_train1 <- pca_train1$x[, 1:14]
+pca_matrix_test1 <- predict(pca_train1, newdata = test_ependymoma_normal)[, 1:14]
+
+pca_matrix_train2 <- pca_train2$x[, 1:13]
+pca_matrix_test2 <- predict(pca_train2, newdata = test_glioblastoma_normal)[, 1:13]
+
+pca_matrix_train3 <- pca_train3$x[, 1:9]
+pca_matrix_test3 <- predict(pca_train3, newdata = test_medulloblastoma_normal)[, 1:9]
+
+pca_matrix_train4 <- pca_train4$x[, 1:7]
+pca_matrix_test4 <- predict(pca_train4, newdata = test_pilocytic_normal)[, 1:7]
+```
+
+```{r}
+# KNN for ependymoma 
+set.seed(123)
+cands.K <- seq(from=3, to=25, by = 2) #candidates for k values 
+#i think the k values should not be even??
+ncv = 10 #number of cross validation folds
+
+# Create 10-fold CV sets
+n <- nrow(pca_matrix_train1)
+set.seed <- 141
+shuffle <- sample.int(n)
+shuffle <- cut(shuffle, breaks = ncv, labels = 1:ncv)
+
+# Tune K by 10-fold CV
+library(class)
+knn.pred.cv <- list()
+knn.cv.mse <- numeric()
+for(k in 1:length(cands.K)) {
+  knn.pred.cv[[k]] <- factor(rep(NA, n), levels = c(0, 1))
+  for(fold in 1:ncv)
+   knn.pred.cv[[k]][shuffle == fold] <- 
+      knn(pca_matrix_train1[shuffle != fold,],
+          pca_matrix_train1[shuffle == fold,], 
+          label_train1[shuffle != fold],
+          cands.K[k])
+  knn.cv.mse[k] <- mean(label_train1 != knn.pred.cv[[k]])
+}
+
+names(knn.pred.cv) <- cands.K
+names(knn.cv.mse) <- cands.K
+plot(knn.cv.mse ~ cands.K, 
+     main = "10-Fold Cross-Validation Errors VS K", type = "l", xlab = "K")
+which.min(knn.cv.mse)
+min(knn.cv.mse)
+
+
+```
+```{r}
+library(class)
+knn_pred <- knn(pca_matrix_train1, pca_matrix_test1, cl = label_train1, k = 9)
+confusion(knn_pred,label_test1)
+mean(knn_pred == label_test1)
+```
+
+
+
+```{r}
+#KNN for glioblastoma 
+set.seed(123)
+cands.K <- seq(from=3, to=19, by = 2) #candidates for k values 
+#i think the k values should not be even??
+ncv = 10 #number of cross validation folds
+
+# Create 10-fold CV sets
+n <- nrow(pca_matrix_train2)
+set.seed <- 141
+shuffle <- sample.int(n)
+shuffle <- cut(shuffle, breaks = ncv, labels = 1:ncv)
+
+# Tune K by 10-fold CV
+library(class)
+knn.pred.cv <- list()
+knn.cv.mse <- numeric()
+for(k in 1:length(cands.K)) {
+  knn.pred.cv[[k]] <- factor(rep(NA, n), levels = c(0, 1))
+  for(fold in 1:ncv)
+   knn.pred.cv[[k]][shuffle == fold] <- 
+      knn(pca_matrix_train2[shuffle != fold,],
+          pca_matrix_train2[shuffle == fold,], 
+          label_train2[shuffle != fold],
+          cands.K[k])
+  knn.cv.mse[k] <- mean(label_train2 != knn.pred.cv[[k]])
+}
+
+names(knn.pred.cv) <- cands.K
+names(knn.cv.mse) <- cands.K
+plot(knn.cv.mse ~ cands.K, 
+     main = "10-Fold Cross-Validation Errors VS K", type = "l", xlab = "K")
+which.min(knn.cv.mse)
+min(knn.cv.mse)
+
+```
+
+
+```{r}
+library(class)
+knn_pred <- knn(pca_matrix_train2, pca_matrix_test2, cl = label_train2, k = 3)
+confusion(knn_pred,label_test2)
+mean(knn_pred == label_test2)
+```
+
+
+```{r}
+#KNN for medulloblastoma 
+set.seed(123)
+cands.K <- seq(from=3, to=15, by = 2) #candidates for k values 
+#i think the k values should not be even??
+ncv = 10 #number of cross validation folds
+
+# Create 10-fold CV sets
+n <- nrow(pca_matrix_train3)
+set.seed <- 141
+shuffle <- sample.int(n)
+shuffle <- cut(shuffle, breaks = ncv, labels = 1:ncv)
+
+# Tune K by 10-fold CV
+library(class)
+knn.pred.cv <- list()
+knn.cv.mse <- numeric()
+for(k in 1:length(cands.K)) {
+  knn.pred.cv[[k]] <- factor(rep(NA, n), levels = c(0, 1))
+  for(fold in 1:ncv)
+   knn.pred.cv[[k]][shuffle == fold] <- 
+      knn(pca_matrix_train3[shuffle != fold,],
+          pca_matrix_train3[shuffle == fold,], 
+          label_train3[shuffle != fold],
+          cands.K[k])
+  knn.cv.mse[k] <- mean(label_train3 != knn.pred.cv[[k]])
+}
+
+names(knn.pred.cv) <- cands.K
+names(knn.cv.mse) <- cands.K
+plot(knn.cv.mse ~ cands.K, 
+     main = "10-Fold Cross-Validation Errors VS K", type = "l", xlab = "K")
+which.min(knn.cv.mse)
+min(knn.cv.mse)
+
+```
+
+```{r}
+library(class)
+knn_pred <- knn(pca_matrix_train3, pca_matrix_test3, cl = label_train3, k = 3)
+confusion(knn_pred,label_test3)
+mean(knn_pred == label_test3)
+```
+
+
+
+```{r}
+# KNN for pilocytic_astrocytoma 
+set.seed(123)
+cands.K <- seq(from=3, to=11, by = 2) #candidates for k values 
+#i think the k values should not be even??
+ncv = 10 #number of cross validation folds
+
+# Create 10-fold CV sets
+n <- nrow(pca_matrix_train4)
+set.seed <- 141
+shuffle <- sample.int(n)
+shuffle <- cut(shuffle, breaks = ncv, labels = 1:ncv)
+
+# Tune K by 10-fold CV
+library(class)
+knn.pred.cv <- list()
+knn.cv.mse <- numeric()
+for(k in 1:length(cands.K)) {
+  knn.pred.cv[[k]] <- factor(rep(NA, n), levels = c(0, 1))
+  for(fold in 1:ncv)
+   knn.pred.cv[[k]][shuffle == fold] <- 
+      knn(pca_matrix_train4[shuffle != fold,],
+          pca_matrix_train4[shuffle == fold,], 
+          label_train4[shuffle != fold],
+          cands.K[k])
+  knn.cv.mse[k] <- mean(label_train4 != knn.pred.cv[[k]])
+}
+
+names(knn.pred.cv) <- cands.K
+names(knn.cv.mse) <- cands.K
+plot(knn.cv.mse ~ cands.K, 
+     main = "10-Fold Cross-Validation Errors VS K", type = "l", xlab = "K")
+which.min(knn.cv.mse)
+min(knn.cv.mse)
+
+```
+
+```{r}
+library(class)
+knn_pred <- knn(pca_matrix_train4, pca_matrix_test4, cl = label_train4, k = 5)
+confusion(knn_pred,label_test4)
+mean(knn_pred == label_test4)
+```
+
+
+
