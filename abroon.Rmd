@@ -24,13 +24,15 @@ test=brain[-sample, ]
 library(e1071)
 
 naive_bayes_model = naiveBayes(x = train[,3:54677], y = train[,2])
-svm_model = svm(x = train[,3:54677], y = train[,2])
+svm_linear_model = svm(x = train[,3:54677], y = train[,2], kernel = "linear")
+svm_nonlinear_model = svm(x = train[,3:54677], y = train[,2], kernel = "radial")
 ```
 
 
 ```{r}
 nb_pred = predict(naive_bayes_model, test[,3:54677])
-svm_pred = predict(svm_model, test[,3:54677])
+svm_linear_pred = predict(svm_linear_model, test[,3:54677])
+svm_nonlinear_pred = predict(svm_nonlinear_model, test[,3:54677])
 
 ```
 
@@ -38,8 +40,10 @@ svm_pred = predict(svm_model, test[,3:54677])
 ```{r}
 
 model_predictions = data.frame(
+  samples = test$samples,
   actual = test$type,
-  svm_pred = svm_pred,
+  svm_linear_pred = svm_linear_pred,
+  svm_nonlinear_pred = svm_nonlinear_pred,
   nb_pred = nb_pred
 )
 
@@ -49,10 +53,17 @@ model_predictions = data.frame(
 ```{r}
 library(caret)
 
-svm_confusionMatrix = confusionMatrix(model_predictions$actual, model_predictions$svm_pred)
-svm_confusionMatrix
+svm_linear_confusionMatrix = confusionMatrix(model_predictions$actual, model_predictions$svm_linear_pred)
+svm_linear_confusionMatrix
+
+svm_nonlinear_confusionMatrix = confusionMatrix(model_predictions$actual, model_predictions$svm_nonlinear_pred)
+svm_nonlinear_confusionMatrix
 
 nb_confusionMatrix = confusionMatrix(model_predictions$actual, model_predictions$nb_pred)
 nb_confusionMatrix
 ```
+
+
+
+
 
