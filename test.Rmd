@@ -404,12 +404,13 @@ model_predictions = data.frame(
 
 ```{r}
 library(caret)
-svm_linear_confusionMatrix = confusionMatrix(model_predictions$actual, model_predictions$svm_linear_pred)
+svm_linear_confusionMatrix = confusionMatrix(model_predictions$svm_linear_pred, model_predictions$actual)
 svm_linear_confusionMatrix
-svm_nonlinear_confusionMatrix = confusionMatrix(model_predictions$actual, model_predictions$svm_nonlinear_pred)
+svm_nonlinear_confusionMatrix = confusionMatrix(model_predictions$svm_nonlinear_pred ,model_predictions$actual)
 svm_nonlinear_confusionMatrix
-nb_confusionMatrix = confusionMatrix(model_predictions$actual, model_predictions$nb_pred)
+nb_confusionMatrix = confusionMatrix(model_predictions$nb_pred,model_predictions$actual)
 nb_confusionMatrix
+```
 ```
 
 
