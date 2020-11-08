@@ -18,16 +18,25 @@ library(caret)
 library(varhandle)
 library(e1071)
 library(dplyr)
+library(tidyr)
+set.seed(1234)
 ```
 
 ```{r}
 #Read the data
 brain <- read.csv("brain.csv")
+head(brain)
 ```
 
 ## PCA
 
 ```{r}
+newbrain <- brain[, -c(1)]
+temp <- gather(newbrain, metric, value, -type)
+
+ggplot(temp, aes(x = metric, y = value)) + geom_boxplot(fill = "red", colour = "brown", notch = FALSE) + labs(title = "Box plots of the selected features", x = "", y = "") + theme_minimal()
+
+
 pca_brain <- prcomp(brain %>% select(-type, -samples), scale = F)
 brain_scores <- pca_brain$x
 
@@ -48,6 +57,7 @@ ggplot(plotter) +
 
 ```{r}
 #Separate the data into a traning set and test set
+sum(is.na(brain))
 sample=sample.int(n = nrow(brain), size = floor(.5*nrow(brain)), replace = F)
 train=brain[sample, ]
 test=brain[-sample, ]
@@ -107,7 +117,6 @@ type_outcome_test <- type_outcome[-train_ind, ]
 ```
 
 ```{r}
-library(caret)
 # Create 10-fold CV sets
 # Tune K by 10-fold CV
 #control the train function using trainControl function - this helps tune K by 10-fold cross-validation
@@ -119,7 +128,7 @@ train_control <- trainControl(method="cv", number=10)
 #so to fix the error, we're going to make y or the outcome column be just the 'type' variable we converted to as a factor variable
 #included trainControl which controls printing and resampling for train
 type_pred_caret <- train(class_pred_train, type_outcome_train, method = "knn", preProcess = c("center","scale"), trControl = train_control)
-#type_pred_caret
+type_pred_caret
 ```
 
 ```{r}
@@ -128,11 +137,11 @@ plot(type_pred_caret)
 
 ```{r}
 knnPredict <- predict(type_pred_caret, newdata = class_pred_test) 
-confusionMatrix(knnPredict, type_outcome_test$type)
+confusionMatrix(knnPredict, type_outcome_test)
 ```
 
 ```{r}
-confusion(knnPredict, type_outcome_test$type)
+confusion(knnPredict, type_outcome_test)
 ```
 
 ## KNN on subtypes
@@ -411,12 +420,15 @@ confusion(knn_pred,label_test4)
 mean(knn_pred == label_test4)
 ```
 
-```{r}
-naive_bayes_model = naiveBayes(x = train[,3:54677], y = train[,2])
-svm_linear_model = svm(x = train[,3:54677], y = train[,2], kernel = "linear")
-svm_nonlinear_model = svm(x = train[,3:54677], y = train[,2], kernel = "radial")
-```
+
 ## Naive Bayes
+
+```{r}
+naive_bayes_model = naiveBayes(x = train[,3:54677], y = factor(train[,2]))
+svm_linear_model = svm(x = train[,3:54677], y = factor(train[,2]), kernel = "linear", type="C")
+svm_nonlinear_model = svm(x = train[,3:54677], y = factor(train[,2]), kernel = "radial", type="C")
+```
+
 
 ```{r}
 nb_pred = predict(naive_bayes_model, test[,3:54677])
@@ -428,7 +440,7 @@ svm_nonlinear_pred = predict(svm_nonlinear_model, test[,3:54677])
 ```{r}
 model_predictions = data.frame(
   samples = test$samples,
-  actual = test$type,
+  actual = factor(test$type),
   svm_linear_pred = svm_linear_pred,
   svm_nonlinear_pred = svm_nonlinear_pred,
   nb_pred = nb_pred
